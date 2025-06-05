@@ -4,7 +4,7 @@
 
 Projeto que utiliza Mongo e Neo4j para armazenar dados de uma concessionária
 
-## 🔧 Pré-requisitos
+## Pré-requisitos
 
 - Docker
 - Docker Compose
@@ -41,7 +41,7 @@ docker exec -it mongo mongosh
   - **Usuário**: `neo4j`
   - **Senha**: `test123`
 
-## ⛔ Parar os serviços
+## Parar os serviços
 
 ```bash
 docker-compose down

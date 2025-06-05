@@ -1,0 +1,14 @@
+name: Print Joke
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  print-joke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Boilerplate workflow
+        run: |
+          echo "random shit"
