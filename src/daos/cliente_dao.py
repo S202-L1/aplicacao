@@ -102,4 +102,9 @@ class ClienteDAO:
         DELETE r
         """
         result = tx.run(query, cliente_id=cliente_id, carro_id=carro_id)
-        return result.consume().counters.relationships_deleted > 0 
+        return result.consume().counters.relationships_deleted > 0
+
+    def atualizar_cliente(self, cliente_id: int, cliente_update):
+        # Este método precisa ser implementado conforme a lógica de atualização no MongoDB
+        # Aqui só um placeholder para não quebrar o CLI
+        return False 

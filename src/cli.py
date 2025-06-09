@@ -103,7 +103,7 @@ def listar_carros():
     
     try:
         dao = CarroDAO()
-        carros = dao.buscar_todos_os_carros()
+        carros = dao.buscar_todos_carros()
         
         if not carros:
             slow_print("Nenhum carro cadastrado.")
@@ -127,7 +127,7 @@ def atualizar_carro():
         carro_id = int(input("Digite o ID do carro a ser atualizado: "))
         
         dao = CarroDAO()
-        carro_atual = dao.ler_carro_por_id(carro_id)
+        carro_atual = dao.buscar_carro(carro_id)
         
         if not carro_atual:
             slow_print("Carro não encontrado.")
@@ -165,7 +165,7 @@ def remover_carro():
         carro_id = int(input("Digite o ID do carro a ser removido: "))
         
         dao = CarroDAO()
-        carro = dao.ler_carro_por_id(carro_id)
+        carro = dao.buscar_carro(carro_id)
         
         if not carro:
             slow_print("Carro não encontrado.")
@@ -180,7 +180,7 @@ def remover_carro():
         confirmacao = input("\nTem certeza que deseja remover este carro? (s/N): ").lower()
         
         if confirmacao == 's':
-            success = dao.apagar_carro(carro_id)
+            success = dao.remover_carro(carro_id)
             if success:
                 slow_print("Carro removido com sucesso!")
         else:
@@ -248,7 +248,7 @@ def listar_clientes():
     
     try:
         dao = ClienteDAO()
-        clientes = dao.buscar_todos_os_clientes()
+        clientes = dao.buscar_todos_clientes()
         
         if not clientes:
             slow_print("Nenhum cliente cadastrado.")
@@ -272,7 +272,7 @@ def atualizar_cliente():
         cliente_id = int(input("Digite o ID do cliente a ser atualizado: "))
         
         dao = ClienteDAO()
-        cliente_atual = dao.ler_cliente_por_id(cliente_id)
+        cliente_atual = dao.buscar_cliente(cliente_id)
         
         if not cliente_atual:
             slow_print("Cliente não encontrado.")
@@ -313,7 +313,7 @@ def remover_cliente():
         cliente_id = int(input("Digite o ID do cliente a ser removido: "))
         
         dao = ClienteDAO()
-        cliente = dao.ler_cliente_por_id(cliente_id)
+        cliente = dao.buscar_cliente(cliente_id)
         
         if not cliente:
             slow_print("Cliente não encontrado.")
@@ -328,7 +328,7 @@ def remover_cliente():
         confirmacao = input("\nTem certeza que deseja remover este cliente? (s/N): ").lower()
         
         if confirmacao == 's':
-            success = dao.apagar_cliente(cliente_id)
+            success = dao.remover_cliente(cliente_id)
             if success:
                 slow_print("Cliente removido com sucesso!")
         else:
@@ -386,7 +386,6 @@ def listar_concessionarias():
     """Lista todas as concessionárias cadastradas"""
     try:
         dao = ConcessionariaDAO()
-        dao.open()
         
         concessionarias = dao.buscar_todas_concessionarias()
         if not concessionarias:
@@ -402,7 +401,7 @@ def listar_concessionarias():
             print("-" * 20)
             
             # Buscar e exibir carros desta concessionária
-            carros = dao.buscar_carros_concessionaria(concessionaria.id)
+            carros = dao.buscar_carros_da_concessionaria(concessionaria.id)
             if carros:
                 for carro in carros:
                     print(f"Modelo: {carro.modelo}")
@@ -427,7 +426,7 @@ def atualizar_concessionaria():
         concessionaria_id = int(input("Digite o ID da concessionária a ser atualizada: "))
         
         dao = ConcessionariaDAO()
-        concessionaria_atual = dao.ler_concessionaria_por_id(concessionaria_id)
+        concessionaria_atual = dao.buscar_concessionaria(concessionaria_id)
         
         if not concessionaria_atual:
             slow_print("Concessionária não encontrada.")
@@ -458,7 +457,7 @@ def remover_concessionaria():
         concessionaria_id = int(input("Digite o ID da concessionária a ser removida: "))
         
         dao = ConcessionariaDAO()
-        concessionaria = dao.ler_concessionaria_por_id(concessionaria_id)
+        concessionaria = dao.buscar_concessionaria(concessionaria_id)
         
         if not concessionaria:
             slow_print("Concessionária não encontrada.")
@@ -470,7 +469,7 @@ def remover_concessionaria():
         confirmacao = input("\nTem certeza que deseja remover esta concessionária? (s/N): ").lower()
         
         if confirmacao == 's':
-            success = dao.apagar_concessionaria(concessionaria_id)
+            success = dao.remover_concessionaria(concessionaria_id)
             if success:
                 slow_print("Concessionária removida com sucesso!")
         else:

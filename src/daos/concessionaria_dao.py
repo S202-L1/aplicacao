@@ -169,7 +169,7 @@ class ConcessionariaDAO:
                 print(f"Concessionária com id {concessionaria_id} não encontrada para atualização.")
                 return False
 
-    def apagar_concessionaria(self, concessionaria_id: int):
+    def remover_concessionaria(self, concessionaria_id: int):
         with self.driver.session() as session:
             result = session.execute_write(
                 lambda tx: tx.run(
@@ -188,4 +188,9 @@ class ConcessionariaDAO:
                 return True
             else:
                 print(f"Concessionária com id {concessionaria_id} não encontrada para exclusão.")
-                return False 
+                return False
+
+    def atualizar_concessionaria(self, concessionaria_id: int, concessionaria_update):
+        # Este método precisa ser implementado conforme a lógica de atualização no MongoDB
+        # Aqui só um placeholder para não quebrar o CLI
+        return False 

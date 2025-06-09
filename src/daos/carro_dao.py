@@ -73,4 +73,9 @@ class CarroDAO:
         """
         result = tx.run(query, carro_id=carro_id)
         record = result.single()
-        return record["id"] if record else None 
+        return record["id"] if record else None
+
+    def atualizar_carro(self, carro_id: int, carro_update):
+        # Este método precisa ser implementado conforme a lógica de atualização no MongoDB
+        # Aqui só um placeholder para não quebrar o CLI
+        return False 
