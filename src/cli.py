@@ -1,8 +1,8 @@
 import sys
 import time
-from database import Database
-import config
-from carro_dao import CarroDAO, Carro
+from config.database import Database
+import config.config as config
+from daos.carro_dao import CarroDAO, Carro
 
 def slow_print(text, delay=0.02):
     for char in text:
