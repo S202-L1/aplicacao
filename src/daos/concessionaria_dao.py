@@ -16,15 +16,40 @@ class ConcessionariaDAO:
         self.driver.close()
 
     def criar_concessionaria(self, concessionaria: Concessionaria) -> int:
-        """Cria uma nova concessionária no Neo4j e retorna seu ID"""
+        """Cria uma nova concessionária no Neo4j, cria e vincula 10 carros, e retorna o ID da concessionária"""
         with self.driver.session() as session:
-            return session.execute_write(self._criar_concessionaria)
+            concessionaria_id = session.execute_write(self._criar_concessionaria)
+            # Cria e vincula 10 carros aleatórios (passando parâmetros, mas só IDs usados no Neo4j)
+            carros = []
+            for _ in range(10):
+                # Parâmetros fictícios para o futuro uso no MongoDB
+                carro_param = Carro(modelo="", ano=0, fabricante="", crlv="")
+                carros.append(carro_param)
+            session.execute_write(self._criar_e_vincular_carros, concessionaria_id, carros)
+            return concessionaria_id
 
     def _criar_concessionaria(self, tx) -> int:
         """Cria uma concessionária no Neo4j e retorna seu ID"""
         query = "CREATE (c:Concessionaria) RETURN id(c) as id"
         result = tx.run(query)
         return result.single()["id"]
+
+    def _criar_e_vincular_carros(self, tx, concessionaria_id: int, carros):
+        """Cria 10 carros (ou a quantidade passada) e vincula à concessionária"""
+        carros_ids = []
+        for _ in carros:
+            query = "CREATE (c:Carro) RETURN id(c) as id"
+            result = tx.run(query)
+            carro_id = result.single()["id"]
+            carros_ids.append(carro_id)
+            # Vincula o carro à concessionária
+            query = """
+            MATCH (c:Concessionaria), (car:Carro)
+            WHERE id(c) = $concessionaria_id AND id(car) = $carro_id
+            CREATE (c)-[:POSSUI]->(car)
+            """
+            tx.run(query, concessionaria_id=concessionaria_id, carro_id=carro_id)
+        return carros_ids
 
     def buscar_concessionaria(self, concessionaria_id: int) -> Optional[Concessionaria]:
         """Busca uma concessionária pelo ID no Neo4j"""
@@ -106,26 +131,6 @@ class ConcessionariaDAO:
         """
         result = tx.run(query, concessionaria_id=concessionaria_id, carro_id=carro_id)
         return result.consume().counters.relationships_deleted > 0
-
-    def _criar_e_vincular_carros(self, tx, concessionaria_id: int) -> List[int]:
-        """Cria 10 carros aleatórios e vincula à concessionária"""
-        carros_ids = []
-        for _ in range(10):
-            carro = random.choice(MODELOS_CARROS)
-            query = "CREATE (c:Carro) RETURN id(c) as id"
-            result = tx.run(query)
-            carro_id = result.single()["id"]
-            carros_ids.append(carro_id)
-            
-            # Vincula o carro à concessionária
-            query = """
-            MATCH (c:Concessionaria), (car:Carro)
-            WHERE id(c) = $concessionaria_id AND id(car) = $carro_id
-            CREATE (c)-[:POSSUI]->(car)
-            """
-            tx.run(query, concessionaria_id=concessionaria_id, carro_id=carro_id)
-        
-        return carros_ids
 
     def atualizar_concessionaria(self, concessionaria: Concessionaria) -> Optional[Concessionaria]:
         with self.driver.session() as session:
