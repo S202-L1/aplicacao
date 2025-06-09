@@ -27,16 +27,17 @@ class Carro:
 
 class CarroDAO:
     def __init__(self):
-        self.driver = GraphDatabase.driver(
+        self.neo4j_driver = GraphDatabase.driver(
             NEO4J_URI,
             auth=(NEO4J_USERNAME, NEO4J_PASSWORD)
         )
+        # Aqui fica dedicado ao mongo_driver
 
     def close(self):
-        self.driver.close()
+        self.neo4j_driver.close()
 
     def criar_carro(self, carro: Carro):
-        with self.driver.session() as session:
+        with self.neo4j_driver.session() as session:
             result = session.execute_write(
                 lambda tx: tx.run(
                     """
@@ -56,7 +57,7 @@ class CarroDAO:
             return carro_id
 
     def ler_carro_por_id(self, carro_id: int):
-        with self.driver.session() as session:
+        with self.neo4j_driver.session() as session:
             result = session.execute_read(
                 lambda tx: tx.run(
                     """
@@ -77,7 +78,7 @@ class CarroDAO:
                 return None
 
     def buscar_todos_os_carros(self):
-        with self.driver.session() as session:
+        with self.neo4j_driver.session() as session:
             result = session.execute_read(
                 lambda tx: tx.run(
                     """
@@ -92,7 +93,7 @@ class CarroDAO:
             return carros
 
     def atualizar_carro(self, carro_id: int, carro_update: Carro):
-        with self.driver.session() as session:
+        with self.neo4j_driver.session() as session:
             result = session.execute_write(
                 lambda tx: tx.run(
                     """
@@ -117,7 +118,7 @@ class CarroDAO:
                 return False
 
     def apagar_carro(self, carro_id: int):
-        with self.driver.session() as session:
+        with self.neo4j_driver.session() as session:
             result = session.execute_write(
                 lambda tx: tx.run(
                     """

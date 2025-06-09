@@ -4,13 +4,13 @@
 
 Projeto que utiliza Mongo e Neo4j para armazenar dados de uma concessionária
 
-## Pré-requisitos
+## 1. Pré-requisitos
 
 - Docker
 - Docker Compose
 - Python 3
 
-## Subindo os serviços
+## 2. Subindo os serviços
 
 ```bash
 docker-compose up -d
@@ -23,7 +23,7 @@ Isso inicia:
   - **Usuário**: `neo4j`
   - **Senha**: `data_data_base`
 
-## 🛠️ Acessando os bancos
+## 3.1 Acessando os bancos
 
 ### MongoDB
 
@@ -34,20 +34,20 @@ docker exec -it mongo mongosh
 ```
 ---
 
-### Neo4j
+### 3.2 Neo4j
 
 - Acesse: [http://localhost:7474](http://localhost:7474)
 - Use:
   - **Usuário**: `neo4j`
   - **Senha**: `data_data_base`
 
-## Parar os serviços
+## 4. Parar os serviços
 
 ```bash
 docker-compose down
 ```
 
-## Persistência
+### Persistência
 
 Os dados são salvos em volumes Docker nomeados:
 
