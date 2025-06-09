@@ -1,139 +1,76 @@
 from neo4j import GraphDatabase
+from typing import List, Optional
+from models.carro import Carro
 from config.config import NEO4J_URI, NEO4J_USERNAME, NEO4J_PASSWORD
-
-class Carro:
-    def __init__(self, modelo: str, ano: int, fabricante: str, crlv: str):
-        self.modelo = modelo
-        self.ano = ano
-        self.fabricante = fabricante
-        self.crlv = crlv
-
-    def to_dict(self):
-        return {
-            "modelo": self.modelo,
-            "ano": self.ano,
-            "fabricante": self.fabricante,
-            "crlv": self.crlv
-        }
-
-    @classmethod
-    def from_dict(cls, data):
-        return cls(
-            modelo=data["modelo"],
-            ano=data["ano"],
-            fabricante=data["fabricante"],
-            crlv=data["crlv"]
-        )
 
 class CarroDAO:
     def __init__(self):
-        self.neo4j_driver = GraphDatabase.driver(
+        self.driver = GraphDatabase.driver(
             NEO4J_URI,
-            auth=(NEO4J_USERNAME, NEO4J_PASSWORD)
-        )
-        # Aqui fica dedicado ao mongo_driver
+            auth=(NEO4J_USERNAME, NEO4J_PASSWORD))
 
     def close(self):
-        self.neo4j_driver.close()
+        self.driver.close()
 
-    def criar_carro(self, carro: Carro):
-        with self.neo4j_driver.session() as session:
-            result = session.execute_write(
-                lambda tx: tx.run(
-                    """
-                    CREATE (c:Carro {
-                        modelo: $modelo,
-                        ano: $ano,
-                        fabricante: $fabricante,
-                        crlv: $crlv
-                    })
-                    RETURN id(c) as carro_id
-                    """,
-                    carro.to_dict()
-                ).single()
-            )
-            carro_id = result["carro_id"]
-            print(f"Carro '{carro.modelo}' criado com id: {carro_id}")
-            return carro_id
+    def criar_carro(self, carro: Carro) -> int:
+        """Cria um novo carro no Neo4j e retorna seu ID"""
+        with self.driver.session() as session:
+            return session.execute_write(self._criar_carro)
 
-    def ler_carro_por_id(self, carro_id: int):
-        with self.neo4j_driver.session() as session:
-            result = session.execute_read(
-                lambda tx: tx.run(
-                    """
-                    MATCH (c:Carro)
-                    WHERE id(c) = $carro_id
-                    RETURN c
-                    """,
-                    carro_id=carro_id
-                ).single()
-            )
-            
-            if result:
-                carro_data = result["c"]
-                print(f"Carro encontrado.")
-                return Carro.from_dict(dict(carro_data))
-            else:
-                print(f"Carro com id {carro_id} não encontrado.")
-                return None
+    def _criar_carro(self, tx) -> int:
+        """Cria um carro no Neo4j e retorna seu ID"""
+        query = "CREATE (c:Carro) RETURN id(c) as id"
+        result = tx.run(query)
+        return result.single()["id"]
 
-    def buscar_todos_os_carros(self):
-        with self.neo4j_driver.session() as session:
-            result = session.execute_read(
-                lambda tx: tx.run(
-                    """
-                    MATCH (c:Carro)
-                    RETURN c
-                    """
-                ).data()
-            )
-            
-            carros = [Carro.from_dict(dict(record["c"])) for record in result]
-            print(f"Encontrado(s) {len(carros)} carro(s).")
-            return carros
+    def buscar_carro(self, carro_id: int) -> Optional[Carro]:
+        """Busca um carro pelo ID no Neo4j"""
+        with self.driver.session() as session:
+            return session.execute_read(self._buscar_carro, carro_id)
 
-    def atualizar_carro(self, carro_id: int, carro_update: Carro):
-        with self.neo4j_driver.session() as session:
-            result = session.execute_write(
-                lambda tx: tx.run(
-                    """
-                    MATCH (c:Carro)
-                    WHERE id(c) = $carro_id
-                    SET c.modelo = $modelo,
-                        c.ano = $ano,
-                        c.fabricante = $fabricante,
-                        c.crlv = $crlv
-                    RETURN c
-                    """,
-                    carro_id=carro_id,
-                    **carro_update.to_dict()
-                ).single()
-            )
-            
-            if result:
-                print(f"Carro {carro_id} atualizado com sucesso.")
-                return True
-            else:
-                print(f"Carro com id {carro_id} não encontrado para atualização.")
-                return False
+    def _buscar_carro(self, tx, carro_id: int) -> Optional[Carro]:
+        """Busca um carro pelo ID no Neo4j"""
+        query = "MATCH (c:Carro) WHERE id(c) = $id RETURN id(c) as id"
+        result = tx.run(query, id=carro_id)
+        record = result.single()
+        if record:
+            return Carro(id=record["id"])
+        return None
 
-    def apagar_carro(self, carro_id: int):
-        with self.neo4j_driver.session() as session:
-            result = session.execute_write(
-                lambda tx: tx.run(
-                    """
-                    MATCH (c:Carro)
-                    WHERE id(c) = $carro_id
-                    DELETE c
-                    RETURN count(c) as deleted
-                    """,
-                    carro_id=carro_id
-                ).single()
-            )
-            
-            if result["deleted"] > 0:
-                print(f"Carro {carro_id} excluído com sucesso.")
-                return True
-            else:
-                print(f"Carro com id {carro_id} não encontrado para exclusão.")
-                return False 
+    def buscar_todos_carros(self) -> List[Carro]:
+        """Retorna todos os carros do Neo4j"""
+        with self.driver.session() as session:
+            return session.execute_read(self._buscar_todos_carros)
+
+    def _buscar_todos_carros(self, tx) -> List[Carro]:
+        """Retorna todos os carros do Neo4j"""
+        query = "MATCH (c:Carro) RETURN id(c) as id"
+        result = tx.run(query)
+        return [Carro(id=record["id"]) for record in result]
+
+    def remover_carro(self, carro_id: int) -> bool:
+        """Remove um carro pelo ID do Neo4j"""
+        with self.driver.session() as session:
+            return session.execute_write(self._remover_carro, carro_id)
+
+    def _remover_carro(self, tx, carro_id: int) -> bool:
+        """Remove um carro pelo ID do Neo4j"""
+        query = "MATCH (c:Carro) WHERE id(c) = $id DETACH DELETE c"
+        result = tx.run(query, id=carro_id)
+        return result.consume().counters.nodes_deleted > 0
+
+    def buscar_concessionaria_do_carro(self, carro_id: int) -> Optional[int]:
+        """Busca a concessionária que possui o carro"""
+        with self.driver.session() as session:
+            return session.execute_read(self._buscar_concessionaria_do_carro, carro_id)
+
+    def _buscar_concessionaria_do_carro(self, tx, carro_id: int) -> Optional[int]:
+        """Busca a concessionária que possui o carro"""
+        query = """
+        MATCH (c:Carro)<-[:POSSUI]-(conc:Concessionaria)
+        WHERE id(c) = $carro_id
+        RETURN id(conc) as id
+        """
+        result = tx.run(query, carro_id=carro_id)
+        record = result.single()
+        return record["id"] if record else None 

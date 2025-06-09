@@ -1,160 +1,105 @@
 from neo4j import GraphDatabase
+from typing import List, Optional
+from models.cliente import Cliente
 from config.config import NEO4J_URI, NEO4J_USERNAME, NEO4J_PASSWORD
-from datetime import datetime
-
-class Cliente:
-    def __init__(self, cpf: str, nome: str, nacionalidade: str, data_nascimento: datetime):
-        self.cpf = cpf
-        self.nome = nome
-        self.nacionalidade = nacionalidade
-        self.data_nascimento = data_nascimento
-
-    def to_dict(self):
-        return {
-            "cpf": self.cpf,
-            "nome": self.nome,
-            "nacionalidade": self.nacionalidade,
-            "data_nascimento": self.data_nascimento.isoformat()
-        }
-
-    @classmethod
-    def from_dict(cls, data):
-        return cls(
-            cpf=data["cpf"],
-            nome=data["nome"],
-            nacionalidade=data["nacionalidade"],
-            data_nascimento=datetime.fromisoformat(data["data_nascimento"])
-        )
 
 class ClienteDAO:
     def __init__(self):
         self.driver = GraphDatabase.driver(
             NEO4J_URI,
-            auth=(NEO4J_USERNAME, NEO4J_PASSWORD)
-        )
+            auth=(NEO4J_USERNAME, NEO4J_PASSWORD))
 
     def close(self):
         self.driver.close()
 
-    def criar_cliente(self, cliente: Cliente):
+    def criar_cliente(self, cliente: Cliente) -> int:
+        """Cria um novo cliente no Neo4j e retorna seu ID"""
         with self.driver.session() as session:
-            result = session.execute_write(
-                lambda tx: tx.run(
-                    """
-                    CREATE (c:Cliente {
-                        cpf: $cpf,
-                        nome: $nome,
-                        nacionalidade: $nacionalidade,
-                        data_nascimento: $data_nascimento
-                    })
-                    RETURN id(c) as cliente_id
-                    """,
-                    cliente.to_dict()
-                ).single()
-            )
-            cliente_id = result["cliente_id"]
-            print(f"Cliente '{cliente.nome}' criado com id: {cliente_id}")
-            return cliente_id
+            return session.execute_write(self._criar_cliente)
 
-    def ler_cliente_por_id(self, cliente_id: int):
-        with self.driver.session() as session:
-            result = session.execute_read(
-                lambda tx: tx.run(
-                    """
-                    MATCH (c:Cliente)
-                    WHERE id(c) = $cliente_id
-                    RETURN c
-                    """,
-                    cliente_id=cliente_id
-                ).single()
-            )
-            
-            if result:
-                cliente_data = result["c"]
-                print(f"Cliente encontrado.")
-                return Cliente.from_dict(dict(cliente_data))
-            else:
-                print(f"Cliente com id {cliente_id} não encontrado.")
-                return None
+    def _criar_cliente(self, tx) -> int:
+        """Cria um cliente no Neo4j e retorna seu ID"""
+        query = "CREATE (c:Cliente) RETURN id(c) as id"
+        result = tx.run(query)
+        return result.single()["id"]
 
-    def buscar_cliente_por_cpf(self, cpf: str):
+    def buscar_cliente(self, cliente_id: int) -> Optional[Cliente]:
+        """Busca um cliente pelo ID no Neo4j"""
         with self.driver.session() as session:
-            result = session.execute_read(
-                lambda tx: tx.run(
-                    """
-                    MATCH (c:Cliente)
-                    WHERE c.cpf = $cpf
-                    RETURN c
-                    """,
-                    cpf=cpf
-                ).single()
-            )
-            
-            if result:
-                cliente_data = result["c"]
-                print(f"Cliente encontrado.")
-                return Cliente.from_dict(dict(cliente_data))
-            else:
-                print(f"Cliente com CPF {cpf} não encontrado.")
-                return None
+            return session.execute_read(self._buscar_cliente, cliente_id)
 
-    def buscar_todos_os_clientes(self):
-        with self.driver.session() as session:
-            result = session.execute_read(
-                lambda tx: tx.run(
-                    """
-                    MATCH (c:Cliente)
-                    RETURN c
-                    """
-                ).data()
-            )
-            
-            clientes = [Cliente.from_dict(dict(record["c"])) for record in result]
-            print(f"Encontrado(s) {len(clientes)} cliente(s).")
-            return clientes
+    def _buscar_cliente(self, tx, cliente_id: int) -> Optional[Cliente]:
+        """Busca um cliente pelo ID no Neo4j"""
+        query = "MATCH (c:Cliente) WHERE id(c) = $id RETURN id(c) as id"
+        result = tx.run(query, id=cliente_id)
+        record = result.single()
+        if record:
+            return Cliente(id=record["id"])
+        return None
 
-    def atualizar_cliente(self, cliente_id: int, cliente_update: Cliente):
+    def buscar_todos_clientes(self) -> List[Cliente]:
+        """Retorna todos os clientes do Neo4j"""
         with self.driver.session() as session:
-            result = session.execute_write(
-                lambda tx: tx.run(
-                    """
-                    MATCH (c:Cliente)
-                    WHERE id(c) = $cliente_id
-                    SET c.cpf = $cpf,
-                        c.nome = $nome,
-                        c.nacionalidade = $nacionalidade,
-                        c.data_nascimento = $data_nascimento
-                    RETURN c
-                    """,
-                    cliente_id=cliente_id,
-                    **cliente_update.to_dict()
-                ).single()
-            )
-            
-            if result:
-                print(f"Cliente {cliente_id} atualizado com sucesso.")
-                return True
-            else:
-                print(f"Cliente com id {cliente_id} não encontrado para atualização.")
-                return False
+            return session.execute_read(self._buscar_todos_clientes)
 
-    def apagar_cliente(self, cliente_id: int):
+    def _buscar_todos_clientes(self, tx) -> List[Cliente]:
+        """Retorna todos os clientes do Neo4j"""
+        query = "MATCH (c:Cliente) RETURN id(c) as id"
+        result = tx.run(query)
+        return [Cliente(id=record["id"]) for record in result]
+
+    def remover_cliente(self, cliente_id: int) -> bool:
+        """Remove um cliente pelo ID do Neo4j"""
         with self.driver.session() as session:
-            result = session.execute_write(
-                lambda tx: tx.run(
-                    """
-                    MATCH (c:Cliente)
-                    WHERE id(c) = $cliente_id
-                    DELETE c
-                    RETURN count(c) as deleted
-                    """,
-                    cliente_id=cliente_id
-                ).single()
-            )
-            
-            if result["deleted"] > 0:
-                print(f"Cliente {cliente_id} excluído com sucesso.")
-                return True
-            else:
-                print(f"Cliente com id {cliente_id} não encontrado para exclusão.")
-                return False 
+            return session.execute_write(self._remover_cliente, cliente_id)
+
+    def _remover_cliente(self, tx, cliente_id: int) -> bool:
+        """Remove um cliente pelo ID do Neo4j"""
+        query = "MATCH (c:Cliente) WHERE id(c) = $id DETACH DELETE c"
+        result = tx.run(query, id=cliente_id)
+        return result.consume().counters.nodes_deleted > 0
+
+    def buscar_carros_do_cliente(self, cliente_id: int) -> List[int]:
+        """Busca os IDs dos carros que o cliente possui"""
+        with self.driver.session() as session:
+            return session.execute_read(self._buscar_carros_do_cliente, cliente_id)
+
+    def _buscar_carros_do_cliente(self, tx, cliente_id: int) -> List[int]:
+        """Busca os IDs dos carros que o cliente possui"""
+        query = """
+        MATCH (c:Cliente)-[:POSSUI]->(car:Carro)
+        WHERE id(c) = $cliente_id
+        RETURN id(car) as id
+        """
+        result = tx.run(query, cliente_id=cliente_id)
+        return [record["id"] for record in result]
+
+    def vincular_carro_ao_cliente(self, cliente_id: int, carro_id: int) -> bool:
+        """Vincula um carro a um cliente"""
+        with self.driver.session() as session:
+            return session.execute_write(self._vincular_carro_ao_cliente, cliente_id, carro_id)
+
+    def _vincular_carro_ao_cliente(self, tx, cliente_id: int, carro_id: int) -> bool:
+        """Vincula um carro a um cliente"""
+        query = """
+        MATCH (c:Cliente), (car:Carro)
+        WHERE id(c) = $cliente_id AND id(car) = $carro_id
+        CREATE (c)-[:POSSUI]->(car)
+        """
+        result = tx.run(query, cliente_id=cliente_id, carro_id=carro_id)
+        return result.consume().counters.relationships_created > 0
+
+    def desvincular_carro_do_cliente(self, cliente_id: int, carro_id: int) -> bool:
+        """Remove a relação entre um cliente e um carro"""
+        with self.driver.session() as session:
+            return session.execute_write(self._desvincular_carro_do_cliente, cliente_id, carro_id)
+
+    def _desvincular_carro_do_cliente(self, tx, cliente_id: int, carro_id: int) -> bool:
+        """Remove a relação entre um cliente e um carro"""
+        query = """
+        MATCH (c:Cliente)-[r:POSSUI]->(car:Carro)
+        WHERE id(c) = $cliente_id AND id(car) = $carro_id
+        DELETE r
+        """
+        result = tx.run(query, cliente_id=cliente_id, carro_id=carro_id)
+        return result.consume().counters.relationships_deleted > 0 

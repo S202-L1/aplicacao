@@ -1,7 +1,7 @@
 class Concessionaria:
     def __init__(self, id: int = None, nome: str = None):
-        self.id = id
-        self.nome = nome
+        self.id = id  # Neo4j ID
+        self.nome = nome  # Will be stored in MongoDB
 
     def to_dict(self):
         return {
