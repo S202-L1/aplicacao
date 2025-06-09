@@ -13,10 +13,10 @@ services:
     image: neo4j:latest
     container_name: neo4j
     ports:
-      - "7474:7474"   # Interface web
-      - "7687:7687"   # Bolt protocol
+      - "7474:7474"   
+      - "7687:7687"  
     environment:
-      - NEO4J_AUTH=neo4j/test123
+      - NEO4J_AUTH=neo4j/data_data_base
     volumes:
       - neo4j_data:/data
       - neo4j_logs:/logs

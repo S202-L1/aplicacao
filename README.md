@@ -21,7 +21,7 @@ Isso inicia:
 - 🟢 MongoDB na porta **27017**
 - 🔵 Neo4j na interface web: [http://localhost:7474](http://localhost:7474)
   - **Usuário**: `neo4j`
-  - **Senha**: `test123`
+  - **Senha**: `data_data_base`
 
 ## 🛠️ Acessando os bancos
 
@@ -39,7 +39,7 @@ docker exec -it mongo mongosh
 - Acesse: [http://localhost:7474](http://localhost:7474)
 - Use:
   - **Usuário**: `neo4j`
-  - **Senha**: `test123`
+  - **Senha**: `data_data_base`
 
 ## Parar os serviços
 
