@@ -34,6 +34,7 @@ class ConcessionariaDAO:
         result = tx.run(query)
         return result.single()["id"]
 
+    # Isso é necessário pra evitar que o usuário tenha que criar os carros manualmente ao criar uma concessionária
     def _criar_e_vincular_carros(self, tx, concessionaria_id: int, carros):
         """Cria 10 carros (ou a quantidade passada) e vincula à concessionária"""
         carros_ids = []
