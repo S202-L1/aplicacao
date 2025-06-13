@@ -86,7 +86,7 @@ def cadastrar_carro():
         fabricante = input("Fabricante do carro: ")
         crlv = input("CRLV do carro: ")
 
-        carro = Carro(modelo, ano, fabricante, crlv)
+        carro = Carro(modelo=modelo, ano=ano, fabricante=fabricante, crlv=crlv)
         dao = CarroDAO()
         
         carro_id = dao.criar_carro(carro)
@@ -110,10 +110,18 @@ def listar_carros():
             return
             
         for carro in carros:
-            print(f"\nModelo: {carro.modelo}")
-            print(f"\nAno: {carro.ano}")
-            print(f"\nFabricante: {carro.fabricante}")
-            print(f"\nCRLV: {carro.crlv}")
+            print(f"\nID: {carro.id}")
+            print(f"Modelo: {carro.modelo}")
+            print(f"Ano: {carro.ano}")
+            print(f"Fabricante: {carro.fabricante}")
+            print(f"CRLV: {carro.crlv}")
+            # Mostrar concessionária, se houver
+            conc_id = dao.buscar_concessionaria_do_carro(carro.id)
+            if conc_id:
+                conc_dao = ConcessionariaDAO()
+                conc = conc_dao.buscar_concessionaria(conc_id)
+                print(f"Concessionária: {conc.nome if conc else 'Desconhecida'}")
+                conc_dao.close()
             print("-" * 30)
             
         dao.close()
@@ -134,10 +142,11 @@ def atualizar_carro():
             return
             
         print("\nDados atuais do carro:")
-        print(f"\nModelo: {carro_atual.modelo}")
-        print(f"\nAno: {carro_atual.ano}")
-        print(f"\nFabricante: {carro_atual.fabricante}")
-        print(f"\nCRLV: {carro_atual.crlv}")
+        print(f"ID: {carro_atual.id}")
+        print(f"Modelo: {carro_atual.modelo}")
+        print(f"Ano: {carro_atual.ano}")
+        print(f"Fabricante: {carro_atual.fabricante}")
+        print(f"CRLV: {carro_atual.crlv}")
         
         print("\nDigite os novos dados (deixe em branco para manter o valor atual):")
         modelo = input(f"Novo modelo [{carro_atual.modelo}]: ") or carro_atual.modelo
@@ -146,11 +155,13 @@ def atualizar_carro():
         fabricante = input(f"Novo fabricante [{carro_atual.fabricante}]: ") or carro_atual.fabricante
         crlv = input(f"Novo CRLV [{carro_atual.crlv}]: ") or carro_atual.crlv
         
-        carro_update = Carro(modelo, ano, fabricante, crlv)
+        carro_update = Carro(modelo=modelo, ano=ano, fabricante=fabricante, crlv=crlv)
         success = dao.atualizar_carro(carro_id, carro_update)
         
         if success:
             slow_print("Carro atualizado com sucesso!")
+        else:
+            slow_print("Falha ao atualizar carro.")
             
         dao.close()
     except ValueError:
@@ -172,6 +183,7 @@ def remover_carro():
             return
             
         print("\nDados do carro a ser removido:")
+        print(f"ID: {carro.id}")
         print(f"Modelo: {carro.modelo}")
         print(f"Ano: {carro.ano}")
         print(f"Fabricante: {carro.fabricante}")
@@ -183,6 +195,8 @@ def remover_carro():
             success = dao.remover_carro(carro_id)
             if success:
                 slow_print("Carro removido com sucesso!")
+            else:
+                slow_print("Falha ao remover carro.")
         else:
             slow_print("Operação cancelada.")
             
@@ -228,7 +242,7 @@ def cadastrar_cliente():
         data_nascimento = input("Data de nascimento (YYYY-MM-DD): ")
         data_nascimento = datetime.strptime(data_nascimento, "%Y-%m-%d")
 
-        cliente = Cliente(cpf, nome, nacionalidade, data_nascimento)
+        cliente = Cliente(cpf=cpf, nome=nome, nacionalidade=nacionalidade, data_nascimento=data_nascimento)
         dao = ClienteDAO()
         
         cliente_id = dao.criar_cliente(cliente)
@@ -255,10 +269,21 @@ def listar_clientes():
             return
             
         for cliente in clientes:
-            print(f"\nCPF: {cliente.cpf}")
+            print(f"\nID: {cliente.id}")
+            print(f"CPF: {cliente.cpf}")
             print(f"Nome: {cliente.nome}")
             print(f"Nacionalidade: {cliente.nacionalidade}")
             print(f"Data de Nascimento: {cliente.data_nascimento.strftime('%d/%m/%Y')}")
+            # Mostrar carros do cliente, se houver
+            carros_ids = dao.buscar_carros_do_cliente(cliente.id)
+            if carros_ids:
+                print("Carros possuídos:")
+                carro_dao = CarroDAO()
+                for carro_id in carros_ids:
+                    carro = carro_dao.buscar_carro(carro_id)
+                    if carro:
+                        print(f" - Modelo: {carro.modelo}, Fabricante: {carro.fabricante}, Ano: {carro.ano}, CRLV: {carro.crlv}")
+                carro_dao.close()
             print("-" * 30)
             
         dao.close()
@@ -279,6 +304,7 @@ def atualizar_cliente():
             return
             
         print("\nDados atuais do cliente:")
+        print(f"ID: {cliente_atual.id}")
         print(f"CPF: {cliente_atual.cpf}")
         print(f"Nome: {cliente_atual.nome}")
         print(f"Nacionalidade: {cliente_atual.nacionalidade}")
@@ -291,11 +317,13 @@ def atualizar_cliente():
         data_nascimento = input(f"Nova data de nascimento [{cliente_atual.data_nascimento.strftime('%Y-%m-%d')}]: ")
         data_nascimento = datetime.strptime(data_nascimento, "%Y-%m-%d") if data_nascimento else cliente_atual.data_nascimento
         
-        cliente_update = Cliente(cpf, nome, nacionalidade, data_nascimento)
+        cliente_update = Cliente(cpf=cpf, nome=nome, nacionalidade=nacionalidade, data_nascimento=data_nascimento)
         success = dao.atualizar_cliente(cliente_id, cliente_update)
         
         if success:
             slow_print("Cliente atualizado com sucesso!")
+        else:
+            slow_print("Falha ao atualizar cliente.")
             
         dao.close()
     except ValueError as e:
@@ -320,6 +348,7 @@ def remover_cliente():
             return
             
         print("\nDados do cliente a ser removido:")
+        print(f"ID: {cliente.id}")
         print(f"CPF: {cliente.cpf}")
         print(f"Nome: {cliente.nome}")
         print(f"Nacionalidade: {cliente.nacionalidade}")
@@ -331,6 +360,8 @@ def remover_cliente():
             success = dao.remover_cliente(cliente_id)
             if success:
                 slow_print("Cliente removido com sucesso!")
+            else:
+                slow_print("Falha ao remover cliente.")
         else:
             slow_print("Operação cancelada.")
             
@@ -372,7 +403,7 @@ def cadastrar_concessionaria():
     try:
         nome = input("Nome da concessionária: ")
 
-        concessionaria = Concessionaria(nome)
+        concessionaria = Concessionaria(nome=nome)
         dao = ConcessionariaDAO()
         
         concessionaria_id = dao.criar_concessionaria(concessionaria)
@@ -383,41 +414,34 @@ def cadastrar_concessionaria():
         slow_print(f"Erro ao cadastrar concessionária: {str(e)}")
 
 def listar_concessionarias():
-    """Lista todas as concessionárias cadastradas"""
+    slow_print("\n--- Lista de Concessionárias ---")
+    
     try:
         dao = ConcessionariaDAO()
-        
         concessionarias = dao.buscar_todas_concessionarias()
+        
         if not concessionarias:
-            print("\nNenhuma concessionária cadastrada.")
+            slow_print("Nenhuma concessionária cadastrada.")
             return
-        
-        print("\nConcessionárias cadastradas:")
-        print("-" * 30)
-        
-        for concessionaria in concessionarias:
-            print(f"\nNome: {concessionaria.nome}")
-            print("\nCarros em estoque:")
-            print("-" * 20)
             
-            # Buscar e exibir carros desta concessionária
-            carros = dao.buscar_carros_da_concessionaria(concessionaria.id)
-            if carros:
-                for carro in carros:
-                    print(f"Modelo: {carro.modelo}")
-                    print(f"Fabricante: {carro.fabricante}")
-                    print(f"Ano: {carro.ano}")
-                    print(f"CRLV: {carro.crlv}")
-                    print("-" * 20)
+        for concessionaria in concessionarias:
+            print(f"\nID: {concessionaria.id}")
+            print(f"Nome: {concessionaria.nome}")
+            print("Carros em estoque:")
+            carros_ids = dao.buscar_carros_da_concessionaria(concessionaria.id)
+            if carros_ids:
+                for carro_id in carros_ids:
+                    carro = dao.carro_collection.find_one({"_id": carro_id})
+                    if carro:
+                        carro_obj = Carro.from_dict(carro)
+                        print(f" - Modelo: {carro_obj.modelo}, Fabricante: {carro_obj.fabricante}, Ano: {carro_obj.ano}, CRLV: {carro_obj.crlv}")
             else:
                 print("Nenhum carro em estoque")
-            
             print("-" * 30)
-    
-    except Exception as e:
-        print(f"\nErro ao listar concessionárias: {str(e)}")
-    finally:
+            
         dao.close()
+    except Exception as e:
+        slow_print(f"Erro ao listar concessionárias: {str(e)}")
 
 def atualizar_concessionaria():
     slow_print("\n--- Atualização de Concessionária ---")
@@ -433,16 +457,19 @@ def atualizar_concessionaria():
             return
             
         print("\nDados atuais da concessionária:")
+        print(f"ID: {concessionaria_atual.id}")
         print(f"Nome: {concessionaria_atual.nome}")
         
         print("\nDigite os novos dados (deixe em branco para manter o valor atual):")
         nome = input(f"Novo nome [{concessionaria_atual.nome}]: ") or concessionaria_atual.nome
         
-        concessionaria_update = Concessionaria(nome)
+        concessionaria_update = Concessionaria(nome=nome)
         success = dao.atualizar_concessionaria(concessionaria_id, concessionaria_update)
         
         if success:
             slow_print("Concessionária atualizada com sucesso!")
+        else:
+            slow_print("Falha ao atualizar concessionária.")
             
         dao.close()
     except ValueError:
@@ -464,6 +491,7 @@ def remover_concessionaria():
             return
             
         print("\nDados da concessionária a ser removida:")
+        print(f"ID: {concessionaria.id}")
         print(f"Nome: {concessionaria.nome}")
         
         confirmacao = input("\nTem certeza que deseja remover esta concessionária? (s/N): ").lower()
@@ -472,6 +500,8 @@ def remover_concessionaria():
             success = dao.remover_concessionaria(concessionaria_id)
             if success:
                 slow_print("Concessionária removida com sucesso!")
+            else:
+                slow_print("Falha ao remover concessionária.")
         else:
             slow_print("Operação cancelada.")
             
@@ -487,7 +517,7 @@ def run():
     print_banner()
     slow_print("Bem-vindo ao sistema de controle de concessionária!\n", delay=0.03)
 
-    db = Database(config.NEO4J_URI, config.NEO4J_USERNAME, config.NEO4J_PASSWORD)
+    db = Database(config.NEO4J_URI, config.NEO4J_USERNAME, config.NEO4J_PASSWORD, config.MONGO_URI)
     db.drop_all()
     
     while True:
