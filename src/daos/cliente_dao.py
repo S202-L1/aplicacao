@@ -132,3 +132,34 @@ class ClienteDAO:
         cliente_data["identificacao"] = identificacao
         result = self.mongo_collection.replace_one({"identificacao": identificacao}, cliente_data)
         return result.matched_count > 0
+
+    def cadastrar_cliente_concessionaria(self, cliente_identificacao: str, concessionaria_identificacao: str) -> bool:
+        """Cadastra um cliente em uma concessionária"""
+        with self.driver.session() as session:
+            return session.execute_write(self._cadastrar_cliente_concessionaria, cliente_identificacao, concessionaria_identificacao)
+
+    def _cadastrar_cliente_concessionaria(self, tx, cliente_identificacao: str, concessionaria_identificacao: str) -> bool:
+        """Cadastra um cliente em uma concessionária"""
+        query = """
+        MATCH (c:Cliente), (conc:Concessionaria)
+        WHERE c.identificacao = $cliente_identificacao AND conc.identificacao = $concessionaria_identificacao
+        CREATE (c)-[:CADASTRADO]->(conc)
+        """
+        result = tx.run(query, cliente_identificacao=cliente_identificacao, concessionaria_identificacao=concessionaria_identificacao)
+        return result.consume().counters.relationships_created > 0
+
+    def verificar_cliente_concessionaria(self, cliente_identificacao: str, concessionaria_identificacao: str) -> bool:
+        """Verifica se um cliente está cadastrado em uma concessionária"""
+        with self.driver.session() as session:
+            return session.execute_read(self._verificar_cliente_concessionaria, cliente_identificacao, concessionaria_identificacao)
+
+    def _verificar_cliente_concessionaria(self, tx, cliente_identificacao: str, concessionaria_identificacao: str) -> bool:
+        """Verifica se um cliente está cadastrado em uma concessionária"""
+        query = """
+        MATCH (c:Cliente)-[:CADASTRADO]->(conc:Concessionaria)
+        WHERE c.identificacao = $cliente_identificacao AND conc.identificacao = $concessionaria_identificacao
+        RETURN count(*) > 0 as existe
+        """
+        result = tx.run(query, cliente_identificacao=cliente_identificacao, concessionaria_identificacao=concessionaria_identificacao)
+        record = result.single()
+        return record["existe"] if record else False

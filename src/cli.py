@@ -572,13 +572,16 @@ def submenu_transacoes():
         print("\n--- Menu de Transações ---")
         print("1. Comprar um carro de uma concessionária")
         print("2. Adicionar carro a uma concessionária")
-        print("3. Voltar ao menu principal")
+        print("3. Cadastrar cliente em uma concessionária")
+        print("4. Voltar ao menu principal")
         choice = input("Digite sua escolha: ")
         if choice == '1':
             comprar_carro_concessionaria()
         elif choice == '2':
             adicionar_carro_concessionaria_transacao()
         elif choice == '3':
+            cadastrar_cliente_concessionaria()
+        elif choice == '4':
             break
         else:
             slow_print("Opção inválida. Tente novamente.\n")
@@ -633,6 +636,54 @@ def adicionar_carro_concessionaria_transacao():
     except Exception as e:
         slow_print(f"Erro ao adicionar carro à concessionária: {str(e)}")
 
+def cadastrar_cliente_concessionaria():
+    slow_print("\n--- Cadastrar Cliente em Concessionária ---")
+    try:
+        cpf = input("CPF do cliente: ")
+        nome_conc = input("Nome da concessionária: ")
+
+        cliente_dao = ClienteDAO()
+        cliente = None
+        for c in cliente_dao.buscar_todos_clientes():
+            if c.cpf == cpf:
+                cliente = c
+                break
+        if not cliente:
+            slow_print("Cliente não encontrado.")
+            cliente_dao.close()
+            return
+
+        conc_dao = ConcessionariaDAO()
+        conc = None
+        for c in conc_dao.buscar_todas_concessionarias():
+            if c.nome == nome_conc:
+                conc = c
+                break
+        if not conc:
+            slow_print("Concessionária não encontrada.")
+            cliente_dao.close()
+            conc_dao.close()
+            return
+
+        # Verifica se o cliente já está cadastrado na concessionária
+        if cliente_dao.verificar_cliente_concessionaria(cliente.identificacao, conc.identificacao):
+            slow_print("Cliente já está cadastrado nesta concessionária.")
+            cliente_dao.close()
+            conc_dao.close()
+            return
+
+        # Cadastra o cliente na concessionária
+        success = cliente_dao.cadastrar_cliente_concessionaria(cliente.identificacao, conc.identificacao)
+        if success:
+            slow_print("Cliente cadastrado na concessionária com sucesso!")
+        else:
+            slow_print("Falha ao cadastrar cliente na concessionária.")
+
+        cliente_dao.close()
+        conc_dao.close()
+    except Exception as e:
+        slow_print(f"Erro ao cadastrar cliente na concessionária: {str(e)}")
+
 def comprar_carro_concessionaria():
     slow_print("\n--- Comprar um Carro de uma Concessionária ---")
     try:
@@ -659,6 +710,11 @@ def comprar_carro_concessionaria():
                 break
         if not conc:
             slow_print("Concessionária não encontrada.")
+            return
+
+        # Verifica se o cliente está cadastrado na concessionária
+        if not cliente_dao.verificar_cliente_concessionaria(cliente.identificacao, conc.identificacao):
+            slow_print("Cliente não está cadastrado nesta concessionária. Por favor, cadastre-se primeiro.")
             return
 
         carro_dao = CarroDAO()

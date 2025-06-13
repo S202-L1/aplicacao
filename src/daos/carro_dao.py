@@ -89,7 +89,7 @@ class CarroDAO:
     def _buscar_concessionaria_do_carro(self, tx, identificacao: str) -> Optional[str]:
         """Busca a concessionária que possui o carro"""
         query = """
-        MATCH (c:Carro)<-[:POSSUI]-(conc:Concessionaria)
+        MATCH (c:Carro)<-[:OFERECE]-(conc:Concessionaria)
         WHERE c.identificacao = $identificacao
         RETURN conc.identificacao as identificacao
         """

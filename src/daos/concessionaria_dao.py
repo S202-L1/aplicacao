@@ -64,7 +64,7 @@ class ConcessionariaDAO:
             query = """
             MATCH (c:Concessionaria), (car:Carro)
             WHERE c.identificacao = $concessionaria_identificacao AND car.identificacao = $carro_identificacao
-            CREATE (c)-[:POSSUI]->(car)
+            CREATE (c)-[:OFERECE]->(car)
             """
             tx.run(query, concessionaria_identificacao=concessionaria_identificacao, carro_identificacao=carro_identificacao)
         return carros_identificacoes
@@ -133,7 +133,7 @@ class ConcessionariaDAO:
     def _buscar_carros_da_concessionaria(self, tx, identificacao: str) -> List[str]:
         """Busca as identificacoes dos carros que a concessionária possui"""
         query = """
-        MATCH (c:Concessionaria)-[:POSSUI]->(car:Carro)
+        MATCH (c:Concessionaria)-[:OFERECE]->(car:Carro)
         WHERE c.identificacao = $identificacao
         RETURN car.identificacao as identificacao
         """
@@ -150,7 +150,7 @@ class ConcessionariaDAO:
         query = """
         MATCH (c:Concessionaria), (car:Carro)
         WHERE c.identificacao = $concessionaria_identificacao AND car.identificacao = $carro_identificacao
-        CREATE (c)-[:POSSUI]->(car)
+        CREATE (c)-[:OFERECE]->(car)
         """
         result = tx.run(query, concessionaria_identificacao=concessionaria_identificacao, carro_identificacao=carro_identificacao)
         return result.consume().counters.relationships_created > 0
@@ -163,7 +163,7 @@ class ConcessionariaDAO:
     def _desvincular_carro_da_concessionaria(self, tx, concessionaria_identificacao: str, carro_identificacao: str) -> bool:
         """Remove a relação entre uma concessionária e um carro"""
         query = """
-        MATCH (c:Concessionaria)-[r:POSSUI]->(car:Carro)
+        MATCH (c:Concessionaria)-[r:OFERECE]->(car:Carro)
         WHERE c.identificacao = $concessionaria_identificacao AND car.identificacao = $carro_identificacao
         DELETE r
         """
