@@ -1,7 +1,7 @@
 class Carro:
-    def __init__(self, id: int = None, modelo: str = None, ano: int = None, 
+    def __init__(self, identificacao: int = None, modelo: str = None, ano: int = None, 
                  fabricante: str = None, crlv: str = None):
-        self.id = id  # Neo4j ID
+        self.identificacao = identificacao  # Neo4j identificacao
         self.modelo = modelo  # Will be stored in MongoDB
         self.ano = ano  # Will be stored in MongoDB
         self.fabricante = fabricante  # Will be stored in MongoDB
@@ -9,7 +9,7 @@ class Carro:
 
     def to_dict(self):
         return {
-            "id": self.id,
+            "identificacao": self.identificacao,
             "modelo": self.modelo,
             "ano": self.ano,
             "fabricante": self.fabricante,
@@ -19,7 +19,7 @@ class Carro:
     @classmethod
     def from_dict(cls, data):
         return cls(
-            id=data.get("id"),
+            identificacao=data.get("identificacao"),
             modelo=data.get("modelo"),
             ano=data.get("ano"),
             fabricante=data.get("fabricante"),

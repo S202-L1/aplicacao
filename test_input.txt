@@ -1,0 +1,28 @@
+2
+1
+123.456.789-00
+João Silva
+Brasileiro
+1990-01-01
+5
+1
+1
+Toyota Corolla
+2023
+Toyota
+ABC123456
+5
+3
+1
+Auto Center São Paulo
+6
+4
+2
+Auto Center São Paulo
+Toyota Corolla
+Toyota
+1
+123.456.789-00
+Auto Center São Paulo
+Toyota Corolla
+Toyota

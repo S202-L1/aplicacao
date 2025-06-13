@@ -1,4 +1,4 @@
-MONGO_URI = "mongodb://mongo:27017"
+MONGO_URI = "mongodb://localhost:27017"
 MONGO_DB_NAME = "concessionaria"
 
 NEO4J_URI = "bolt://localhost:7687"

@@ -1,9 +1,9 @@
 from datetime import datetime
 
 class Cliente:
-    def __init__(self, id: int = None, cpf: str = None, nome: str = None, 
+    def __init__(self, identificacao: int = None, cpf: str = None, nome: str = None, 
                  nacionalidade: str = None, data_nascimento: datetime = None):
-        self.id = id  # Neo4j ID
+        self.identificacao = identificacao  # Neo4j identificacao
         self.cpf = cpf  # Will be stored in MongoDB
         self.nome = nome  # Will be stored in MongoDB
         self.nacionalidade = nacionalidade  # Will be stored in MongoDB
@@ -11,7 +11,7 @@ class Cliente:
 
     def to_dict(self):
         return {
-            "id": self.id,
+            "identificacao": self.identificacao,
             "cpf": self.cpf,
             "nome": self.nome,
             "nacionalidade": self.nacionalidade,
@@ -21,7 +21,7 @@ class Cliente:
     @classmethod
     def from_dict(cls, data):
         return cls(
-            id=data.get("id"),
+            identificacao=data.get("identificacao"),
             cpf=data.get("cpf"),
             nome=data.get("nome"),
             nacionalidade=data.get("nacionalidade"),

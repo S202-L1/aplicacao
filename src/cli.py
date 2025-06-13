@@ -7,7 +7,7 @@ from daos.cliente_dao import ClienteDAO, Cliente
 from daos.concessionaria_dao import ConcessionariaDAO, Concessionaria
 from datetime import datetime
 
-def slow_print(text, delay=0.02):
+def slow_print(text, delay=0.01):
     for char in text:
         print(char, end='', flush=True)
         time.sleep(delay)
@@ -35,7 +35,8 @@ def main_menu():
     print("1. Gerenciar carros")
     print("2. Gerenciar clientes")
     print("3. Gerenciar concessionárias")
-    print("4. Sair")
+    print("4. Transações")
+    print("5. Sair")
 
     choice = input("Digite sua escolha: ")
 
@@ -46,6 +47,8 @@ def main_menu():
     elif choice == '3':
         submenu_concessionarias()
     elif choice == '4':
+        submenu_transacoes()
+    elif choice == '5':
         slow_print("Saindo do sistema. Até logo!")
         sys.exit()
     else:
@@ -110,13 +113,13 @@ def listar_carros():
             return
             
         for carro in carros:
-            print(f"\nID: {carro.id}")
+            print(f"\nID: {carro.identificacao}")
             print(f"Modelo: {carro.modelo}")
             print(f"Ano: {carro.ano}")
             print(f"Fabricante: {carro.fabricante}")
             print(f"CRLV: {carro.crlv}")
             # Mostrar concessionária, se houver
-            conc_id = dao.buscar_concessionaria_do_carro(carro.id)
+            conc_id = dao.buscar_concessionaria_do_carro(carro.identificacao)
             if conc_id:
                 conc_dao = ConcessionariaDAO()
                 conc = conc_dao.buscar_concessionaria(conc_id)
@@ -142,7 +145,7 @@ def atualizar_carro():
             return
             
         print("\nDados atuais do carro:")
-        print(f"ID: {carro_atual.id}")
+        print(f"ID: {carro_atual.identificacao}")
         print(f"Modelo: {carro_atual.modelo}")
         print(f"Ano: {carro_atual.ano}")
         print(f"Fabricante: {carro_atual.fabricante}")
@@ -183,7 +186,7 @@ def remover_carro():
             return
             
         print("\nDados do carro a ser removido:")
-        print(f"ID: {carro.id}")
+        print(f"ID: {carro.identificacao}")
         print(f"Modelo: {carro.modelo}")
         print(f"Ano: {carro.ano}")
         print(f"Fabricante: {carro.fabricante}")
@@ -269,13 +272,13 @@ def listar_clientes():
             return
             
         for cliente in clientes:
-            print(f"\nID: {cliente.id}")
+            print(f"\nID: {cliente.identificacao}")
             print(f"CPF: {cliente.cpf}")
             print(f"Nome: {cliente.nome}")
             print(f"Nacionalidade: {cliente.nacionalidade}")
             print(f"Data de Nascimento: {cliente.data_nascimento.strftime('%d/%m/%Y')}")
             # Mostrar carros do cliente, se houver
-            carros_ids = dao.buscar_carros_do_cliente(cliente.id)
+            carros_ids = dao.buscar_carros_do_cliente(cliente.identificacao)
             if carros_ids:
                 print("Carros possuídos:")
                 carro_dao = CarroDAO()
@@ -304,7 +307,7 @@ def atualizar_cliente():
             return
             
         print("\nDados atuais do cliente:")
-        print(f"ID: {cliente_atual.id}")
+        print(f"ID: {cliente_atual.identificacao}")
         print(f"CPF: {cliente_atual.cpf}")
         print(f"Nome: {cliente_atual.nome}")
         print(f"Nacionalidade: {cliente_atual.nacionalidade}")
@@ -348,7 +351,7 @@ def remover_cliente():
             return
             
         print("\nDados do cliente a ser removido:")
-        print(f"ID: {cliente.id}")
+        print(f"ID: {cliente.identificacao}")
         print(f"CPF: {cliente.cpf}")
         print(f"Nome: {cliente.nome}")
         print(f"Nacionalidade: {cliente.nacionalidade}")
@@ -380,7 +383,8 @@ def submenu_concessionarias():
         print("2. Listar concessionárias")
         print("3. Atualizar concessionária")
         print("4. Remover concessionária")
-        print("5. Voltar ao menu principal")
+        print("5. Adicionar carro à concessionária")
+        print("6. Voltar ao menu principal")
 
         choice = input("Digite sua escolha: ")
 
@@ -393,22 +397,26 @@ def submenu_concessionarias():
         elif choice == '4':
             remover_concessionaria()
         elif choice == '5':
+            adicionar_carro_concessionaria()
+        elif choice == '6':
             break
         else:
             slow_print("Opção inválida. Tente novamente.\n")
 
 def cadastrar_concessionaria():
     slow_print("\n--- Cadastro de Nova Concessionária ---")
-    
     try:
         nome = input("Nome da concessionária: ")
-
-        concessionaria = Concessionaria(nome=nome)
         dao = ConcessionariaDAO()
-        
+        # Verifica se já existe uma concessionária com esse nome
+        for c in dao.buscar_todas_concessionarias():
+            if c.nome == nome:
+                slow_print("Já existe uma concessionária com esse nome. O nome deve ser único.")
+                dao.close()
+                return
+        concessionaria = Concessionaria(nome=nome)
         concessionaria_id = dao.criar_concessionaria(concessionaria)
         slow_print(f"Concessionária cadastrada com sucesso! ID: {concessionaria_id}")
-        
         dao.close()
     except Exception as e:
         slow_print(f"Erro ao cadastrar concessionária: {str(e)}")
@@ -425,16 +433,16 @@ def listar_concessionarias():
             return
             
         for concessionaria in concessionarias:
-            print(f"\nID: {concessionaria.id}")
+            print(f"\nID: {concessionaria.identificacao}")
             print(f"Nome: {concessionaria.nome}")
             print("Carros em estoque:")
-            carros_ids = dao.buscar_carros_da_concessionaria(concessionaria.id)
+            carros_ids = dao.buscar_carros_da_concessionaria(concessionaria.identificacao)
             if carros_ids:
                 for carro_id in carros_ids:
-                    carro = dao.carro_collection.find_one({"_id": carro_id})
-                    if carro:
-                        carro_obj = Carro.from_dict(carro)
-                        print(f" - Modelo: {carro_obj.modelo}, Fabricante: {carro_obj.fabricante}, Ano: {carro_obj.ano}, CRLV: {carro_obj.crlv}")
+                    carro_data = dao.carro_collection.find_one({"identificacao": carro_id})
+                    if carro_data:
+                        carro = Carro.from_dict(carro_data)
+                        print(f" - Modelo: {carro.modelo}, Fabricante: {carro.fabricante}, Ano: {carro.ano}, CRLV: {carro.crlv}")
             else:
                 print("Nenhum carro em estoque")
             print("-" * 30)
@@ -447,24 +455,24 @@ def atualizar_concessionaria():
     slow_print("\n--- Atualização de Concessionária ---")
     
     try:
-        concessionaria_id = int(input("Digite o ID da concessionária a ser atualizada: "))
+        identificacao = input("Digite a identificação da concessionária a ser atualizada: ")
         
         dao = ConcessionariaDAO()
-        concessionaria_atual = dao.buscar_concessionaria(concessionaria_id)
+        concessionaria_atual = dao.buscar_concessionaria(identificacao)
         
         if not concessionaria_atual:
             slow_print("Concessionária não encontrada.")
             return
             
         print("\nDados atuais da concessionária:")
-        print(f"ID: {concessionaria_atual.id}")
+        print(f"ID: {concessionaria_atual.identificacao}")
         print(f"Nome: {concessionaria_atual.nome}")
         
         print("\nDigite os novos dados (deixe em branco para manter o valor atual):")
         nome = input(f"Novo nome [{concessionaria_atual.nome}]: ") or concessionaria_atual.nome
         
         concessionaria_update = Concessionaria(nome=nome)
-        success = dao.atualizar_concessionaria(concessionaria_id, concessionaria_update)
+        success = dao.atualizar_concessionaria(identificacao, concessionaria_update)
         
         if success:
             slow_print("Concessionária atualizada com sucesso!")
@@ -472,32 +480,80 @@ def atualizar_concessionaria():
             slow_print("Falha ao atualizar concessionária.")
             
         dao.close()
-    except ValueError:
-        slow_print("Erro: O ID deve ser um número inteiro.")
     except Exception as e:
         slow_print(f"Erro ao atualizar concessionária: {str(e)}")
+
+def adicionar_carro_concessionaria():
+    slow_print("\n--- Adicionar Carro à Concessionária ---")
+    try:
+        nome_conc = input("Nome da concessionária: ")
+        modelo = input("Modelo do carro: ")
+        fabricante = input("Fabricante do carro: ")
+
+        conc_dao = ConcessionariaDAO()
+        conc = None
+        for c in conc_dao.buscar_todas_concessionarias():
+            if c.nome.lower() == nome_conc.lower():
+                conc = c
+                break
+        if not conc:
+            slow_print("Concessionária não encontrada.")
+            conc_dao.close()
+            return
+
+        carro_dao = CarroDAO()
+        carro_encontrado = None
+        for carro in carro_dao.buscar_todos_carros():
+            if carro.modelo.lower() == modelo.lower() and carro.fabricante.lower() == fabricante.lower():
+                carro_encontrado = carro
+                break
+        if not carro_encontrado:
+            slow_print("Carro não encontrado.")
+            conc_dao.close()
+            carro_dao.close()
+            return
+
+        # Verifica se o carro já está em alguma concessionária
+        conc_atual = carro_dao.buscar_concessionaria_do_carro(carro_encontrado.identificacao)
+        if conc_atual:
+            slow_print("Este carro já está em uma concessionária.")
+            conc_dao.close()
+            carro_dao.close()
+            return
+
+        # Vincula o carro à concessionária
+        success = conc_dao.vincular_carro_a_concessionaria(conc.identificacao, carro_encontrado.identificacao)
+        if success:
+            slow_print("Carro adicionado à concessionária com sucesso!")
+        else:
+            slow_print("Falha ao adicionar carro à concessionária.")
+
+        conc_dao.close()
+        carro_dao.close()
+    except Exception as e:
+        slow_print(f"Erro ao adicionar carro à concessionária: {str(e)}")
 
 def remover_concessionaria():
     slow_print("\n--- Remoção de Concessionária ---")
     
     try:
-        concessionaria_id = int(input("Digite o ID da concessionária a ser removida: "))
+        identificacao = input("Digite a identificação da concessionária a ser removida: ")
         
         dao = ConcessionariaDAO()
-        concessionaria = dao.buscar_concessionaria(concessionaria_id)
+        concessionaria = dao.buscar_concessionaria(identificacao)
         
         if not concessionaria:
             slow_print("Concessionária não encontrada.")
             return
             
         print("\nDados da concessionária a ser removida:")
-        print(f"ID: {concessionaria.id}")
+        print(f"ID: {concessionaria.identificacao}")
         print(f"Nome: {concessionaria.nome}")
         
         confirmacao = input("\nTem certeza que deseja remover esta concessionária? (s/N): ").lower()
         
         if confirmacao == 's':
-            success = dao.remover_concessionaria(concessionaria_id)
+            success = dao.remover_concessionaria(identificacao)
             if success:
                 slow_print("Concessionária removida com sucesso!")
             else:
@@ -506,16 +562,134 @@ def remover_concessionaria():
             slow_print("Operação cancelada.")
             
         dao.close()
-    except ValueError:
-        slow_print("Erro: O ID deve ser um número inteiro.")
     except Exception as e:
         slow_print(f"Erro ao remover concessionária: {str(e)}")
+
+# ------------------------ CRUD TRANSACOES ------------------------
+
+def submenu_transacoes():
+    while True:
+        print("\n--- Menu de Transações ---")
+        print("1. Comprar um carro de uma concessionária")
+        print("2. Adicionar carro a uma concessionária")
+        print("3. Voltar ao menu principal")
+        choice = input("Digite sua escolha: ")
+        if choice == '1':
+            comprar_carro_concessionaria()
+        elif choice == '2':
+            adicionar_carro_concessionaria_transacao()
+        elif choice == '3':
+            break
+        else:
+            slow_print("Opção inválida. Tente novamente.\n")
+
+def adicionar_carro_concessionaria_transacao():
+    slow_print("\n--- Adicionar Carro a uma Concessionária ---")
+    try:
+        nome_conc = input("Nome da concessionária: ")
+        modelo = input("Modelo do carro: ")
+        fabricante = input("Fabricante do carro: ")
+
+        conc_dao = ConcessionariaDAO()
+        conc = None
+        for c in conc_dao.buscar_todas_concessionarias():
+            if c.nome.lower() == nome_conc.lower():
+                conc = c
+                break
+        if not conc:
+            slow_print("Concessionária não encontrada.")
+            conc_dao.close()
+            return
+
+        carro_dao = CarroDAO()
+        carro_encontrado = None
+        for carro in carro_dao.buscar_todos_carros():
+            if carro.modelo.lower() == modelo.lower() and carro.fabricante.lower() == fabricante.lower():
+                carro_encontrado = carro
+                break
+        if not carro_encontrado:
+            slow_print("Carro não encontrado.")
+            conc_dao.close()
+            carro_dao.close()
+            return
+
+        # Verifica se o carro já está em alguma concessionária
+        conc_atual = carro_dao.buscar_concessionaria_do_carro(carro_encontrado.identificacao)
+        if conc_atual:
+            slow_print("Este carro já está em uma concessionária.")
+            conc_dao.close()
+            carro_dao.close()
+            return
+
+        # Vincula o carro à concessionária
+        success = conc_dao.vincular_carro_a_concessionaria(conc.identificacao, carro_encontrado.identificacao)
+        if success:
+            slow_print("Carro adicionado à concessionária com sucesso!")
+        else:
+            slow_print("Falha ao adicionar carro à concessionária.")
+
+        conc_dao.close()
+        carro_dao.close()
+    except Exception as e:
+        slow_print(f"Erro ao adicionar carro à concessionária: {str(e)}")
+
+def comprar_carro_concessionaria():
+    slow_print("\n--- Comprar um Carro de uma Concessionária ---")
+    try:
+        cpf = input("CPF do comprador: ")
+        nome_conc = input("Nome da concessionária: ")
+        modelo = input("Modelo do carro: ")
+        fabricante = input("Fabricante do carro: ")
+
+        cliente_dao = ClienteDAO()
+        cliente = None
+        for c in cliente_dao.buscar_todos_clientes():
+            if c.cpf == cpf:
+                cliente = c
+                break
+        if not cliente:
+            slow_print("Cliente não encontrado.")
+            return
+
+        conc_dao = ConcessionariaDAO()
+        conc = None
+        for c in conc_dao.buscar_todas_concessionarias():
+            if c.nome == nome_conc:
+                conc = c
+                break
+        if not conc:
+            slow_print("Concessionária não encontrada.")
+            return
+
+        carro_dao = CarroDAO()
+        carro_encontrado = None
+        for carro in carro_dao.buscar_todos_carros():
+            if carro.modelo == modelo and carro.fabricante == fabricante:
+                # Verifica se o carro está na concessionária
+                conc_id = carro_dao.buscar_concessionaria_do_carro(carro.identificacao)
+                if conc_id == conc.identificacao:
+                    carro_encontrado = carro
+                    break
+        if not carro_encontrado:
+            slow_print("Carro não encontrado na concessionária especificada.")
+            return
+
+        # Desvincula o carro da concessionária
+        conc_dao.desvincular_carro_da_concessionaria(conc.identificacao, carro_encontrado.identificacao)
+        # Vincula o carro ao cliente
+        cliente_dao.vincular_carro_ao_cliente(cliente.identificacao, carro_encontrado.identificacao)
+        slow_print("Transação realizada com sucesso! O carro agora pertence ao cliente.")
+        conc_dao.close()
+        cliente_dao.close()
+        carro_dao.close()
+    except Exception as e:
+        slow_print(f"Erro na transação: {str(e)}")
 
 # ------------------------------------------------
 
 def run():
     print_banner()
-    slow_print("Bem-vindo ao sistema de controle de concessionária!\n", delay=0.03)
+    slow_print("Bem-vindo ao sistema de controle de concessionária!\n", delay=0.01)
 
     db = Database(config.NEO4J_URI, config.NEO4J_USERNAME, config.NEO4J_PASSWORD, config.MONGO_URI)
     db.drop_all()
