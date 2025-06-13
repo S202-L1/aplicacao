@@ -1,5 +1,7 @@
 # Concessionária
 
+![Logo da Concessionária](documentacao/logo.png)
+
 Projeto que utiliza Mongo e Neo4j para armazenar dados de uma concessionária
 
 ## 1. Pré-requisitos
