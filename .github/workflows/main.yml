@@ -1,14 +1,29 @@
-name: Boilerplate workflow
+name: CLI Compilation Check
 
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
-  print-joke:
+  check-compilation:
     runs-on: ubuntu-latest
     steps:
-      - name: Boilerplate workflow
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
         run: |
-          echo "random shit"
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          
+      - name: Check CLI compilation
+        run: |
+          python -m py_compile src/cli.py
+          echo "CLI compilation successful!"
